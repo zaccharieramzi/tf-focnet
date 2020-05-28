@@ -81,8 +81,16 @@ class FocNet(Model):
         # unpooling is not specified in the paper, but in the code
         # you can see a deconv is used
         # https://github.com/hsijiaxidian/FOCNet/blob/master/FracDCNN.m#L415
-        # self.switch
-        # TODO: look into exactly what this is
+        self.n_switches_per_scale = []
+        self.compute_n_switches_per_scale()
+        self.switches_per_scale = [
+            [
+                lambda x: x
+                # TODO: look into exactly what this is
+                for _ in range(self.n_switches_per_scale[i_scale])
+            ]
+            for i_scale in range(self.n_scales)
+        ]
         self.first_conv = Conv2D(
             self.n_filters,  # we output a grayscale image
             self.kernel_size,  # we simply do a linear combination of the features
@@ -117,10 +125,23 @@ class FocNet(Model):
                     self.needs_to_compute[scale_up_node] = scale_down_node
                 down = not down
 
+    def compute_n_switches_per_scale(self):
+        for i_scale in range(self.n_scales):
+            if i_scale == 0:
+                n_switches = self.communications_between_scales[0] // 2
+            elif i_scale == self.n_scales - 1:
+                n_switches = self.communications_between_scales[-1] // 2
+            else:
+                n_switches = self.communications_between_scales[i_scale - 1] // 2
+                n_switches += self.communications_between_scales[i_scale] // 2
+            self.n_switches_per_scale.append(n_switches)
+
+
     def call(self, inputs):
         features_per_scale = [[] for _ in range(self.n_scales)]
         features_per_scale[0].append(self.first_conv(inputs))
         unpoolings_used_per_scale = [0 for _ in range(self.n_scales - 1)]
+        switches_used_per_scale = [0 for _ in range(self.n_scales)]
         i_scale = 0
         i_feature = 0
         while i_scale != 0 or i_feature < self.n_convs_per_scale[0]:
@@ -160,6 +181,10 @@ class FocNet(Model):
                         additional_feature_processed = self.pooling(
                             additional_feature,
                         )
+                    i_switch = switches_used_per_scale[i_scale]
+                    switch = self.switches_per_scale[i_scale][i_switch]
+                    additional_feature_processed = switch(additional_feature_processed)
+                    switches_used_per_scale[i_scale] += 1
                     if len(features_per_scale[i_scale]) == 0:
                         # this is the first feature added to the scale
                         features_per_scale[i_scale].append(additional_feature_processed)
