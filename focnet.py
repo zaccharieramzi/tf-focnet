@@ -47,6 +47,21 @@ class FocConvBlock(Layer):
         outputs = self.activation(outputs)
         return outputs
 
+class SwitchLayer(Layer):
+    # form what I understand from the code this is what a switch layer looks
+    # like
+    # very difficult to read from this
+    # https://github.com/hsijiaxidian/FOCNet/blob/master/%2Bdagnn/Gate.m
+    # which is used here
+    # https://github.com/hsijiaxidian/FOCNet/blob/master/FracDCNN.m#L360
+    def __init__(self, **kwargs):
+        super(SwitchLayer, self).__init__(**kwargs)
+        self.switch = self.add_weight('switch', shape=())
+
+    def call(self, inputs):
+        outputs = inputs * tf.sigmoid(self.switch)
+        return outputs
+
 class FocNet(Model):
     def __init__(
             self,
@@ -85,8 +100,7 @@ class FocNet(Model):
         self.compute_n_switches_per_scale()
         self.switches_per_scale = [
             [
-                lambda x: x
-                # TODO: look into exactly what this is
+                SwitchLayer()
                 for _ in range(self.n_switches_per_scale[i_scale])
             ]
             for i_scale in range(self.n_scales)
