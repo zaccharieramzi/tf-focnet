@@ -168,7 +168,6 @@ class FocNet(Model):
             )
             if node_to_compute is not None:
                 i_scale_to_compute, i_feature_to_compute = node_to_compute
-                # 1               ,  2
                 # test if feature is already computed
                 n_features_scale_to_compute = len(features_per_scale[i_scale_to_compute])
                 if n_features_scale_to_compute <= i_feature_to_compute:
