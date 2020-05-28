@@ -18,6 +18,15 @@ DEFAULT_COMMUNICATION_BETWEEN_SCALES = [
 ]
 
 
+def residual_weights_computation(t, beta):
+    w = [beta]
+    for k in range(t-1, 0, -1):
+        w_k = (1 - (1 + beta) / (t - k + 1)) * w[-1]
+        w.append(w_k)
+    w = w[::-1]
+    return w
+
+
 class FocConvBlock(Layer):
     def __init__(self, n_filters=128, kernel_size=3, **kwargs):
         super(FocConvBlock, self).__init__(**kwargs)
@@ -46,6 +55,7 @@ class FocNet(Model):
             kernel_size=3,
             n_convs_per_scale=DEFAULT_N_CONVS_PER_SCALE,
             communications_between_scales=DEFAULT_COMMUNICATION_BETWEEN_SCALES,
+            beta=0.2,
             **kwargs,
         ):
         super(FocNet, self).__init__(**kwargs)
@@ -54,6 +64,7 @@ class FocNet(Model):
         self.kernel_size = kernel_size
         self.n_convs_per_scale = n_convs_per_scale
         self.communications_between_scales = communications_between_scales
+        self.beta = beta
         self.pooling = AveragePooling2D(padding='same')
         self.unpooling = UpSampling2D()
         # TODO: which upsampling
@@ -146,7 +157,13 @@ class FocNet(Model):
                 feature = features_per_scale[i_scale][-1]
             new_feature = self.conv_blocks_per_scale[i_scale][i_feature](
                 feature
-            ) + features_per_scale[i_scale][0]  # the residual connection
+            )
+            weights = residual_weights_computation(
+                i_feature,
+                beta=self.beta,
+            )
+            for weight, res_feature in zip(weights, features_per_scale[i_scale]):
+                new_feature = new_feature + weight * res_feature
             features_per_scale[i_scale].append(new_feature)
             i_feature += 1
         outputs = self.final_conv(features_per_scale[0][self.n_convs_per_scale[0]])
