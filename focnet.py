@@ -6,7 +6,7 @@ from tensorflow.keras.layers import (
     BatchNormalization,
     Activation,
     AveragePooling2D,
-    UpSampling2D,
+    Conv2DTranspose,
 )
 
 
@@ -66,8 +66,21 @@ class FocNet(Model):
         self.communications_between_scales = communications_between_scales
         self.beta = beta
         self.pooling = AveragePooling2D(padding='same')
-        self.unpooling = UpSampling2D()
-        # TODO: which upsampling
+        self.unpoolings_per_scale = [
+            [
+                Conv2DTranspose(
+                    self.n_filters,
+                    self.kernel_size,
+                    strides=(2, 2),
+                    padding='same',
+                )
+                for _ in range(len(self.communications_between_scales[i_scale])//2)
+            ]
+            for i_scale in range(self.n_scales - 1)
+        ]
+        # unpooling is not specified in the paper, but in the code
+        # you can see a deconv is used
+        # https://github.com/hsijiaxidian/FOCNet/blob/master/FracDCNN.m#L415
         # self.switch
         # TODO: look into exactly what this is
         self.first_conv = Conv2D(
@@ -107,6 +120,7 @@ class FocNet(Model):
     def call(self, inputs):
         features_per_scale = [[] for _ in range(self.n_scales)]
         features_per_scale[0].append(self.first_conv(inputs))
+        unpoolings_used_per_scale = [0 for _ in range(self.n_scales - 1)]
         i_scale = 0
         i_feature = 0
         while i_scale != 0 or i_feature < self.n_convs_per_scale[0]:
@@ -135,9 +149,12 @@ class FocNet(Model):
                         # the feature has to be unpooled and switched
                         # for now since I don't understand switching, I just do
                         # unpooling, switching will be implemented later on
-                        additional_feature_processed = self.unpooling(
+                        i_unpooling = unpoolings_used_per_scale[i_scale]
+                        unpooling = self.unpoolings_per_scale[i_scale][i_unpooling]
+                        additional_feature_processed = unpooling(
                             additional_feature,
                         )
+                        unpoolings_used_per_scale[i_scale] += 1
                     else:
                         # the feature has to be pooled
                         additional_feature_processed = self.pooling(
