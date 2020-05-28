@@ -56,7 +56,12 @@ class SwitchLayer(Layer):
     # https://github.com/hsijiaxidian/FOCNet/blob/master/FracDCNN.m#L360
     def __init__(self, **kwargs):
         super(SwitchLayer, self).__init__(**kwargs)
-        self.switch = self.add_weight('switch', shape=())
+        self.switch = self.add_weight(
+            'switch',
+            shape=(),
+            initializer=tf.constant_initializer(10),  # we add a big initializer
+            # to take into account the adjacent scales by default
+        )
 
     def call(self, inputs):
         outputs = inputs * tf.sigmoid(self.switch)
