@@ -142,12 +142,12 @@ class FocNet(Model):
     def compute_n_switches_per_scale(self):
         for i_scale in range(self.n_scales):
             if i_scale == 0:
-                n_switches = self.communications_between_scales[0] // 2
+                n_switches = len(self.communications_between_scales[0]) // 2
             elif i_scale == self.n_scales - 1:
-                n_switches = self.communications_between_scales[-1] // 2
+                n_switches = len(self.communications_between_scales[-1]) // 2
             else:
-                n_switches = self.communications_between_scales[i_scale - 1] // 2
-                n_switches += self.communications_between_scales[i_scale] // 2
+                n_switches = len(self.communications_between_scales[i_scale - 1]) // 2
+                n_switches += len(self.communications_between_scales[i_scale]) // 2
             self.n_switches_per_scale.append(n_switches)
 
 
