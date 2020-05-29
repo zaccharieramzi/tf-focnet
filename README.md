@@ -1,5 +1,8 @@
 # TensorFlow implementation of the FocNet
 
+[![Build Status](https://travis-ci.com/zaccharieramzi/tf-focnet.svg?branch=master)](https://travis-ci.com/zaccharieramzi/tf-focnet)
+
+
 The FocNet is a network introduced by Xixi Jia et al. in
 "Focnet: A fractional optimal control network for image denoising", CVPR 2019.
 If you use this network, please cite their work appropriately.
