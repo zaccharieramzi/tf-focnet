@@ -1,6 +1,6 @@
 language: python
 install:
-  - pip install pytest
+  - pip install pytest numpy
   - pip install tensorflow
 
 script:
