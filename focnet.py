@@ -62,6 +62,7 @@ class SwitchLayer(Layer):
             shape=(),
             initializer=tf.constant_initializer(2),  # we add a big initializer
             # to take into account the adjacent scales by default
+            # but not too big because we want to have some gradient flowing
         )
 
     def call(self, inputs):
