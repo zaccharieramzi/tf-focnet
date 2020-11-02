@@ -60,7 +60,7 @@ class SwitchLayer(Layer):
         self.switch = self.add_weight(
             'switch_' + str(K.get_uid('switch')),
             shape=(),
-            initializer=tf.constant_initializer(2),  # we add a big initializer
+            initializer=tf.constant_initializer(0.),  # we add a big initializer
             # to take into account the adjacent scales by default
             # but not too big because we want to have some gradient flowing
         )
