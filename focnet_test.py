@@ -13,7 +13,7 @@ def test_focnet():
 def test_focnet_change():
     model = FocNet(n_filters=4)
     x = tf.random.normal((1, 64, 64, 1))
-    y = x
+    y = x + tf.random.normal((1, 64, 64, 1))
     model(x)
     before = [v.numpy() for v in model.trainable_variables]
     model.compile(optimizer='sgd', loss='mse')
